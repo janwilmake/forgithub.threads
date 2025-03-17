@@ -17,4 +17,5 @@ Now the only additional requirement when you wish to share a project would be to
 
 ## WISHLIST
 
+- Add sponsorflare monetisation layer ($0.002 / requests)
 - Finish xymake to get the X post history (and add search into the db) to be a more reliable X data source than Google

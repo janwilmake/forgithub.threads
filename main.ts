@@ -82,6 +82,8 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=86400", // Cache for 24 hours (in seconds)
+          Expires: new Date(Date.now() + 86400000).toUTCString(), // 24 hours in milliseconds
         },
       });
     } catch (error) {

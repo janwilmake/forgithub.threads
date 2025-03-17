@@ -1,16 +1,304 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threads for GitHub - Creating a Bridge Between GitHub and X</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
+    <script src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    <style>
+        body {
+            background-color: #0f0f0f;
+            color: #f5f5f5;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #ff00cc, #9933ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-border {
+            border: 2px solid;
+            border-image-slice: 1;
+            border-image-source: linear-gradient(90deg, #ff00cc, #9933ff);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, rgba(153, 51, 255, 0.1), rgba(255, 0, 204, 0.1));
+        }
+
+        .btn-gradient {
+            background: linear-gradient(90deg, #ff00cc, #9933ff);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(153, 51, 255, 0.3);
+        }
+    </style>
 </head>
 
-<body>
-    <elements-api apiDescriptionUrl="openapi.json" router="hash" />
+<body class="min-h-screen flex flex-col">
+    <header class="py-6 px-4 sm:px-6 lg:px-8 mb-12">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 sm:mb-0">
+                <div class="text-3xl font-bold gradient-text">Threads for GitHub</div>
+            </div>
+            <nav class="flex space-x-6">
+                <a href="#demo" class="text-gray-300 hover:text-white transition duration-300">Demo</a>
+                <a href="#about" class="text-gray-300 hover:text-white transition duration-300">About</a>
+                <a href="/openapi" class="text-gray-300 hover:text-white transition duration-300">API</a>
+            </nav>
+        </div>
+    </header>
 
+    <main class="flex-grow">
+        <section class="py-10 px-4 sm:px-6 lg:px-8 mb-20">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl font-extrabold mb-6 leading-tight">
+                    <span class="gradient-text">Creating a Bridge Between</span>
+                    <br>
+                    <span class="text-white">GitHub and X</span>
+                </h1>
+                <p class="text-xl text-gray-300 mb-10 leading-relaxed">
+                    Connect repositories with related X threads by discovering links in both repo content
+                    and across the web. Simplify sharing and discover conversations about your code.
+                </p>
+                <a href="#demo" class="inline-block btn-gradient text-white font-bold py-3 px-8 rounded-full">
+                    Try It Now
+                </a>
+            </div>
+        </section>
+
+        <section id="demo" class="py-12 px-4 sm:px-6 lg:px-8 mb-20">
+            <div class="max-w-5xl mx-auto">
+                <h2 class="text-3xl font-bold mb-10 text-center gradient-text">Interactive Demo</h2>
+                <div class="gradient-border rounded-xl p-6 gradient-bg mb-10">
+                    <form id="demoForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="owner" class="block text-sm font-medium text-gray-300 mb-2">Repository
+                                    Owner</label>
+                                <input type="text" id="owner" name="owner" value="janwilmake"
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white">
+                            </div>
+                            <div>
+                                <label for="repo" class="block text-sm font-medium text-gray-300 mb-2">Repository
+                                    Name</label>
+                                <input type="text" id="repo" name="repo" value="cloudflare-sponsorware"
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white">
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <button type="submit" class="btn-gradient text-white font-bold py-2 px-6 rounded-lg">
+                                Find Related Threads
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="loadingIndicator" class="hidden text-center py-10">
+                    <div class="flex justify-center">
+                        <svg class="animate-spin h-10 w-10 text-purple-500" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    </div>
+                    <p class="mt-4 text-lg text-gray-300">Fetching related X threads...</p>
+                </div>
+
+                <div id="results" class="hidden">
+                    <h3 class="text-2xl font-bold mb-6 text-center">Found Threads</h3>
+                    <div id="resultsCount" class="text-center mb-6 text-gray-300"></div>
+                    <div id="threadsList" class="space-y-6 mb-10"></div>
+                </div>
+
+                <div id="noResults" class="hidden text-center py-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500 mx-auto mb-4" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p class="text-xl text-gray-300 mb-4">No threads found for this repository</p>
+                    <p class="text-gray-400">Try a different repository or check back later as more X threads get
+                        discovered.</p>
+                </div>
+
+                <div id="errorMessage" class="hidden text-center py-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500 mx-auto mb-4" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-xl text-gray-300 mb-4">Error fetching data</p>
+                    <p id="errorText" class="text-gray-400"></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="py-12 px-4 sm:px-6 lg:px-8 mb-20">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-10 text-center gradient-text">About Threads for GitHub</h2>
+                <div class="space-y-8 text-gray-300">
+                    <div class="gradient-border rounded-xl p-6 gradient-bg">
+                        <h3 class="text-xl font-bold mb-4">What It Does</h3>
+                        <p class="leading-relaxed">
+                            Threads for GitHub discovers the connections between GitHub repositories and related
+                            conversations on X. It works in two ways:
+                        </p>
+                        <ul class="list-disc list-inside mt-4 space-y-2">
+                            <li>Scrapes GitHub repos for links to X threads and posts</li>
+                            <li>Searches across the web for X posts that mention your repository</li>
+                        </ul>
+                    </div>
+
+                    <div class="gradient-border rounded-xl p-6 gradient-bg">
+                        <h3 class="text-xl font-bold mb-4">How To Use It</h3>
+                        <p class="leading-relaxed">
+                            Simply enter a repository owner/name or access the API directly. Include X links in your
+                            repo's
+                            changelog, README, or documentation to make them easily discoverable. The service
+                            automatically
+                            finds threads that mention your GitHub URL even if they're not explicitly linked in your
+                            repo.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-12 text-center">
+                    <a href="/openapi" class="inline-block btn-gradient text-white font-bold py-3 px-8 rounded-full">
+                        Explore the API
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Floating X Button -->
+    <a href="https://x.com/janwilmake"
+        class="fixed bottom-6 right-6 p-3 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors duration-300 shadow-lg hover:shadow-xl"
+        target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" class="w-6 h-6 text-white" fill="currentColor">
+            <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+    </a>
+
+    <footer class="py-10 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <div class="text-2xl font-bold gradient-text">Threads for GitHub</div>
+                <p class="text-gray-400 mt-2">Creating a Bridge Between GitHub and X</p>
+            </div>
+            <div class="text-gray-400">
+                &copy; 2025 Threads for GitHub. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const demoForm = document.getElementById('demoForm');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const results = document.getElementById('results');
+            const resultsCount = document.getElementById('resultsCount');
+            const threadsList = document.getElementById('threadsList');
+            const noResults = document.getElementById('noResults');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+
+            demoForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const owner = document.getElementById('owner').value.trim();
+                const repo = document.getElementById('repo').value.trim();
+
+                if (!owner || !repo) {
+                    alert('Please enter both owner and repository name');
+                    return;
+                }
+
+                // Hide previous results and show loading indicator
+                results.classList.add('hidden');
+                noResults.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                loadingIndicator.classList.remove('hidden');
+
+                try {
+                    const response = await axios.get(`https://threads.forgithub.com/${owner}/${repo}`);
+                    loadingIndicator.classList.add('hidden');
+
+                    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                        // Clear previous results
+                        threadsList.innerHTML = '';
+
+                        // Update results count
+                        resultsCount.textContent = `Found ${response.data.length} related thread${response.data.length !== 1 ? 's' : ''}`;
+
+                        // Create container for each thread
+                        response.data.forEach(thread => {
+                            const threadContainer = document.createElement('div');
+                            threadContainer.className = 'gradient-border rounded-xl p-6 gradient-bg';
+
+                            // Create info section
+                            const infoDiv = document.createElement('div');
+                            infoDiv.className = 'mb-4';
+                            infoDiv.innerHTML = `
+                                <p class="text-gray-300">
+                                    <span class="font-bold">User:</span> @${thread.login}
+                                </p>
+                                <p class="text-gray-300">
+                                    <span class="font-bold">Thread ID:</span> ${thread.id}
+                                </p>
+                                <a href="${thread.url}" target="_blank" class="text-purple-400 hover:text-purple-300 transition-colors">
+                                    View original thread →
+                                </a>
+                            `;
+
+                            // Create embed container
+                            const embedDiv = document.createElement('div');
+                            embedDiv.className = 'mt-4';
+
+                            // Add tweet embed using Twitter's embed API
+                            threadContainer.appendChild(infoDiv);
+                            threadContainer.appendChild(embedDiv);
+                            threadsList.appendChild(threadContainer);
+
+                            // Use Twitter's widget to create the embed
+                            twttr.widgets.createTweet(
+                                thread.id.toString(),
+                                embedDiv,
+                                {
+                                    theme: 'dark',
+                                    dnt: true,
+                                    width: '100%'
+                                }
+                            );
+                        });
+
+                        results.classList.remove('hidden');
+                    } else {
+                        noResults.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    loadingIndicator.classList.add('hidden');
+                    errorMessage.classList.remove('hidden');
+                    errorText.textContent = error.response ?
+                        `${error.response.status}: ${error.response.data.error || 'Unknown error'}` :
+                        'Could not connect to the API. Please try again later.';
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
