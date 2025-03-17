@@ -26,6 +26,7 @@ interface TweetResult {
   login: string;
   url: string;
   text: string;
+  source: string;
 }
 
 // Extract tweet ID and username from X.com URL
@@ -104,6 +105,7 @@ export default {
             login: tweetInfo.login,
             url: result.link,
             text: `${result.title} ${result.snippet}`,
+            source: "google",
           });
         }
       }

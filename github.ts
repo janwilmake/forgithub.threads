@@ -24,6 +24,8 @@ interface TwitterLink {
   id: number;
   login: string;
   url: string;
+  text?: string;
+  source: string;
 }
 
 // The URL pattern for the API: /[owner]/[repo][/tree/[branch]/[...path]]
@@ -75,8 +77,8 @@ export default {
       console.error("Error fetching links:", error);
 
       return new Response(
-        JSON.stringify({ 
-          error: error instanceof Error ? error.message : "An error occurred" 
+        JSON.stringify({
+          error: error instanceof Error ? error.message : "An error occurred",
         }),
         {
           status: (error as { status?: number }).status || 500,
@@ -91,11 +93,11 @@ export default {
  * Fetch X/Twitter links from a GitHub repository using ZIPObject API
  */
 async function fetchTwitterLinksFromRepo(
-  env: Env, 
-  owner: string, 
-  repo: string, 
-  branch: string, 
-  subPath: string
+  env: Env,
+  owner: string,
+  repo: string,
+  branch: string,
+  subPath: string,
 ): Promise<TwitterLink[]> {
   // Base URL for GitHub repository
   const githubRepoUrl = `https://github.com/${owner}/${repo}`;
@@ -128,7 +130,9 @@ async function fetchTwitterLinksFromRepo(
 
   if (!response.ok) {
     const errorText = await response.text();
-    const error = new Error(`ZIPObject API error (${response.status}): ${errorText}`);
+    const error = new Error(
+      `ZIPObject API error (${response.status}): ${errorText}`,
+    );
     (error as any).status = response.status;
     throw error;
   }
@@ -144,7 +148,9 @@ async function fetchTwitterLinksFromRepo(
 /**
  * Extract X/Twitter links from the ZIPObject API response
  */
-function extractTwitterLinksFromResponse(data: ZipObjectResponse): TwitterLink[] {
+function extractTwitterLinksFromResponse(
+  data: ZipObjectResponse,
+): TwitterLink[] {
   const links: TwitterLink[] = [];
   const uniqueLinks = new Set<string>();
 
@@ -172,6 +178,7 @@ function extractTwitterLinksFromResponse(data: ZipObjectResponse): TwitterLink[]
                 id: Number(statusId),
                 login: username,
                 url: match[0], // Use the already captured full URL
+                source: "github",
               });
             }
           }

@@ -1,5 +1,5 @@
 name = "forgithub_threads"
-main = "google.ts"
+main = "main.ts"
 compatibility_date = "2025-03-14"
 assets.directory = "./public"
 dev.port = 3000
