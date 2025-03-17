@@ -5,6 +5,27 @@
  * by searching repository content for X/Twitter links using ZIPObject API.
  */
 
+// Define types for environment variables
+interface Env {
+  ADMIN_SECRET: string;
+}
+
+// Define types for the API response
+interface ZipObjectFile {
+  matches: string[][];
+}
+
+interface ZipObjectResponse {
+  files?: Record<string, ZipObjectFile>;
+}
+
+// Define type for a Twitter link
+interface TwitterLink {
+  id: number;
+  login: string;
+  url: string;
+}
+
 // The URL pattern for the API: /[owner]/[repo][/tree/[branch]/[...path]]
 const API_URL_PATTERN =
   /^\/([^\/]+)\/([^\/]+)(?:\/tree\/([^\/]+)(?:\/(.+))?)?$/;
@@ -18,7 +39,7 @@ const TWITTER_LINK_REGEX =
  * Handle incoming requests to the Threads for GitHub API
  */
 export default {
-  fetch: async (request, env) => {
+  fetch: async (request: Request, env: Env): Promise<Response> => {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -54,9 +75,11 @@ export default {
       console.error("Error fetching links:", error);
 
       return new Response(
-        JSON.stringify({ error: error.message || "An error occurred" }),
+        JSON.stringify({ 
+          error: error instanceof Error ? error.message : "An error occurred" 
+        }),
         {
-          status: error.status || 500,
+          status: (error as { status?: number }).status || 500,
           headers: { "Content-Type": "application/json" },
         },
       );
@@ -67,7 +90,13 @@ export default {
 /**
  * Fetch X/Twitter links from a GitHub repository using ZIPObject API
  */
-async function fetchTwitterLinksFromRepo(env, owner, repo, branch, subPath) {
+async function fetchTwitterLinksFromRepo(
+  env: Env, 
+  owner: string, 
+  repo: string, 
+  branch: string, 
+  subPath: string
+): Promise<TwitterLink[]> {
   // Base URL for GitHub repository
   const githubRepoUrl = `https://github.com/${owner}/${repo}`;
 
@@ -99,10 +128,12 @@ async function fetchTwitterLinksFromRepo(env, owner, repo, branch, subPath) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`ZIPObject API error (${response.status}): ${errorText}`);
+    const error = new Error(`ZIPObject API error (${response.status}): ${errorText}`);
+    (error as any).status = response.status;
+    throw error;
   }
 
-  const data = await response.json();
+  const data: ZipObjectResponse = await response.json();
 
   // Process the response to extract matches
   const links = extractTwitterLinksFromResponse(data);
@@ -113,9 +144,9 @@ async function fetchTwitterLinksFromRepo(env, owner, repo, branch, subPath) {
 /**
  * Extract X/Twitter links from the ZIPObject API response
  */
-function extractTwitterLinksFromResponse(data) {
-  const links = [];
-  const uniqueLinks = new Set();
+function extractTwitterLinksFromResponse(data: ZipObjectResponse): TwitterLink[] {
+  const links: TwitterLink[] = [];
+  const uniqueLinks = new Set<string>();
 
   // Go through each file that has matches
   if (data.files) {
