@@ -1,0 +1,142 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Threads for GitHub API",
+    "description": "An API that links GitHub repositories with related X (Twitter) threads by searching repository content for X/Twitter links.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Threads for GitHub Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://threads.forgithub.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/{owner}/{repo}/{page}/{branch}/{path}": {
+      "get": {
+        "summary": "Get X/Twitter threads linked in a GitHub repository",
+        "description": "Searches the specified GitHub repository for X/Twitter links and returns them as a list of threads.",
+        "operationId": "getThreads",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "description": "GitHub repository owner (username or organization)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "description": "GitHub repository name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "path",
+            "description": "Optional page parameter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branch",
+            "in": "path",
+            "description": "GitHub repository branch (defaults to 'main' if not specified)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "Path within the repository to search for X/Twitter links",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "simple",
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of X/Twitter threads found in the repository",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Thread"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid URL format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Thread": {
+        "type": "object",
+        "required": ["id", "login", "url"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "X/Twitter status ID"
+          },
+          "login": {
+            "type": "string",
+            "description": "X/Twitter username"
+          },
+          "url": {
+            "type": "string",
+            "description": "Full URL to the X/Twitter thread"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      }
+    }
+  }
+}

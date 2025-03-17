@@ -1,7 +1,7 @@
 name = "forgithub_threads"
 main = "main.js"
 compatibility_date = "2025-03-14"
-# assets.directory = "./public"
+assets.directory = "./public"
 dev.port = 3000
 
 route.custom_domain = true
