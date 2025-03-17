@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Threads for GitHub API",
-    "description": "An API that links GitHub repositories with related X (Twitter) threads by searching repository content for X/Twitter links.",
-    "version": "1.0.0",
+    "description": "An API that connects GitHub repositories with related X (Twitter) threads by searching both repository content for X/Twitter links and performing web searches.",
+    "version": "1.1.0",
     "contact": {
       "name": "Threads for GitHub Support"
     }
@@ -17,9 +17,9 @@
   "paths": {
     "/{owner}/{repo}/{page}/{branch}/{path}": {
       "get": {
-        "summary": "Get X/Twitter threads linked in a GitHub repository",
-        "description": "Searches the specified GitHub repository for X/Twitter links and returns them as a list of threads.",
-        "operationId": "getThreads",
+        "summary": "Get X/Twitter threads with custom parameters",
+        "description": "Get X/Twitter threads with custom page type, branch, and path parameters.",
+        "operationId": "getThreadsCustom",
         "parameters": [
           {
             "name": "owner",
@@ -42,7 +42,7 @@
           {
             "name": "page",
             "in": "path",
-            "description": "Optional page parameter",
+            "description": "Page type (can be 'github', 'google', or any other value for combined results)",
             "required": false,
             "schema": {
               "type": "string"
@@ -71,20 +71,20 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of X/Twitter threads found in the repository",
+            "description": "A list of X/Twitter threads based on the specified parameters",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Thread"
+                    "$ref": "#/components/schemas/ThreadWithText"
                   }
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid URL format",
+            "description": "Invalid request format",
             "content": {
               "application/json": {
                 "schema": {
@@ -126,6 +126,23 @@
             "description": "Full URL to the X/Twitter thread"
           }
         }
+      },
+      "ThreadWithText": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Thread"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "Text content or snippet from the X/Twitter thread (available for Google search results)"
+              }
+            }
+          }
+        ]
       },
       "Error": {
         "type": "object",
